@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en" ng-app="game">
+  <head>
+    <script src="/vendor/angular/angular.js"></script>
+    <script src="/vendor/underscore/underscore.js"></script>
+    <script>
+      angular.module("game", [])
+      .controller('GameCtrl', function($scope) {
+
+        var numRows = 5;
+        var numCols = 6;
+
+        $scope.setPlayers = function(numPlayers) {
+          $scope.numPlayers = numPlayers;
+        };
+
+        $scope.stage = "pick";
+        $scope.next = function() {
+          if ($scope.stage == "pick") {
+            $scope.stage = "instructions-1";
+          } else if ($scope.stage == "instructions-1") {
+            $scope.stage = "instructions-2";
+          } else if ($scope.stage == "instructions-2") {
+            $scope.stage = "instructions-3";
+          } else if ($scope.stage == "instructions-3") {
+            $scope.stage = "game";
+          }
+        }
+
+        $scope.numPlayers = 3;
+        $scope.winLength = 4;
+        $scope.winningPlayer = 0;  // 0 --> no winner
+
+        var currentPlayer = 1;
+
+        $scope.squares = [];
+
+        $scope.play = function(row, col) {
+          var alreadyOwned = $scope.squares[row][col] !== 0;
+          if (!alreadyOwned) {
+            $scope.squares[row][col] = currentPlayer;
+            currentPlayer = currentPlayer === $scope.numPlayers ? 1 : currentPlayer + 1;
+
+            clearDiags();
+
+            $scope.winningPlayer = checkWin();
+            if ($scope.winningPlayer !== 0) {
+              $scope.showWin = true;
+            } else if (boardFilled()) {
+              $scope.showTye = true;
+            }
+          }
+        };
+
+        $scope.reset = function() {
+          $scope.showWin = false;
+          $scope.showTye = false;
+
+          $scope.squares = [];
+          for (var r = 0; r < numRows; r++) {
+            var row = [];
+            $scope.squares.push(row);
+            for (var c = 0; c < numCols; c++) {
+              row.push(0);
+            }
+          }
+        };
+
+        function checkWin() {
+          var squares = $scope.squares;
+
+          var numInARow = 0;
+          var currentPlayer = null;
+          var prevPlayer = null;
+
+          // loop through cols
+          for (var r = 0; r < numRows; r++) {
+            numInARow = 0;
+            currentPlayer = null;
+            prevPlayer = null;
+            for (var c = 0; c < numCols; c++) {
+              prevPlayer = currentPlayer;
+              currentPlayer = squares[r][c];
+              if (currentPlayer === prevPlayer) {
+                numInARow = numInARow + 1;
+              } else {
+                numInARow = 1;
+              }
+              if (currentPlayer !== 0 && numInARow === $scope.winLength) { 
+                return currentPlayer; 
+              }
+            }
+          }
+
+          // loop through rows
+          for (var c = 0; c < numCols; c++) {
+            numInARow = 0;
+            currentPlayer = null;
+            prevPlayer = null;
+            for (var r = 0; r < numRows; r++) {
+              prevPlayer = currentPlayer;
+              currentPlayer = squares[r][c];
+              if (currentPlayer === prevPlayer) {
+                numInARow = numInARow + 1;
+              } else {
+                numInARow = 1;
+              }
+              if (currentPlayer !== 0 && numInARow === $scope.winLength) { 
+                return currentPlayer; 
+              }
+            }
+          }
+
+          return 0;
+        };
+
+        function clearDiags() {
+          var squares = $scope.squares;
+          var clearCenters = [];
+          for (var r = 1; r < numRows - 1; r++) {
+            for (var c = 1; c < numCols - 1; c++) {
+              if (squares[r][c] !== 0) {
+                if (squares[r - 1][c - 1] === squares[r][c] && squares[r][c] === squares[r + 1][c + 1]) {
+                  clearCenters.push([r, c]);
+                } else if (squares[r - 1][c + 1] === squares[r][c] && squares[r][c] === squares[r + 1][c - 1]) {
+                  clearCenters.push([r, c]);
+                }
+              }
+            }
+          }
+
+          for (var i = 0; i < clearCenters.length; i++) {
+            var center = clearCenters[i];
+            var r = center[0];
+            var c = center[1];
+            squares[r    ][c    ] = 0;
+            squares[r - 1][c    ] = 0;
+            squares[r + 1][c    ] = 0;
+            squares[r    ][c - 1] = 0;
+            squares[r - 1][c - 1] = 0;
+            squares[r + 1][c - 1] = 0;
+            squares[r    ][c + 1] = 0;
+            squares[r - 1][c + 1] = 0;
+            squares[r + 1][c + 1] = 0;
+          }
+        }
+
+        function boardFilled() {
+          for (var r = 0; r < numRows; r++) {
+            for (var c = 0; c < numCols; c++) {
+              if ($scope.squares[r][c] === 0) {
+                return false;
+              }
+            }
+          }
+          return true;
+        }
+
+        $scope.reset();
+
+      });
+    </script>
+
+    <link rel="stylesheet" href="/vendor/normalize-css/normalize.css" type="text/css">
+    <style>
+      html {
+        height: 100%;
+      }
+
+      body {
+        min-height: 100%;
+        background-color: #F5FEF4;
+        font-family: Georgia, Serif;
+        color: #694815;
+        text-align: center;
+      }
+
+      .overlay {
+        position: fixed;
+        background-color: rgba(255, 255, 255, 0.8);
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+      }
+
+      .content {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        align-items: center;
+        width: 100%;
+        min-height: 100%;
+
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+      }
+
+      .board {
+        margin-top: 50px;
+      }
+
+      .row {
+        margin: 0;
+        padding: 0;
+        height: 20%;
+      }
+
+      .square {
+        min-height: 80px;
+        min-width: 80px;
+        margin: 0 2px;
+        padding: 0;
+        display: inline-block;
+        border-radius: 5px;
+      }
+
+      .square > * {
+        max-width: 50%;
+      }
+
+      .square-0 {
+        background-color: #DDDDDD;
+      }
+
+      .color-1 {
+        color: #1C4AC7;
+      }
+
+      .color-2 {
+        color: #F74328;
+      }
+
+      .color-3 {
+        color: #39BD5C;
+      }
+
+      .color-4 {
+        color: #FF781F;
+      }
+      .square-1 {
+        background-color: #1C4AC7;
+      }
+
+      .square-2 {
+        background-color: #F74328;
+      }
+
+      .square-3 {
+        background-color: #39BD5C;
+      }
+
+      .square-4 {
+        background-color: #FF781F; 
+      }
+
+      .button {
+        color: #F5FEF4;
+        background-color: #694815;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        
+        font-size: 30px;
+        cursor: pointer;
+        padding: 20px;
+        border-radius: 5px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 20px;
+      }
+
+      .title {
+        font-size: 60px;
+      }
+
+    </style>
+  </head>
+  <body ng-controller="GameCtrl">
+    <div class="content" ng-show="stage == 'pick'">
+      <h1 class="title"><span class="color-2">Apple</span> <span class="color-4">Orange</span> <span class="color-3">Kale</span></h1>
+
+      <div>
+        <p>How many players are there?</p>
+        <div class="square button" ng-click="setPlayers(2); next()">2</div>
+        <div class="square button" ng-click="setPlayers(3); next()">3</div>
+        <div class="square button" ng-click="setPlayers(4); next()">4</div>
+      </div>
+    </div>
+
+    <div class="content" ng-show="stage == 'instructions-1'">
+      <h1>You win a game by matching 4 squares in a row or a column.</h1>
+
+      <div class="board">
+        <div class="row">
+          <div class="square square-0"></div>
+          <div class="square square-2"></div>
+          <div class="square square-1"></div>
+          <div class="square square-2"></div>
+          <div class="square square-3"></div>
+          <div class="square square-2"></div>
+        </div>
+        <div class="row">
+          <div class="square square-3"></div>
+          <div class="square square-1"></div>
+          <div class="square square-1"></div>
+          <div class="square square-1"></div>
+          <div class="square square-1"></div>
+          <div class="square square-0"></div>
+        </div>
+        <div class="row">
+          <div class="square square-1"></div>
+          <div class="square square-0"></div>
+          <div class="square square-1"></div>
+          <div class="square square-3"></div>
+          <div class="square square-3"></div>
+          <div class="square square-2"></div>
+        </div>
+      </div>
+      <div class="button" ng-click="next()">Continue</div>
+    </div>
+
+
+    <div class="content" ng-show="stage == 'instructions-2'">
+      <h1>Clear a 3x3 area when you get a diagonal...</h1>
+
+      <div class="board">
+        <div class="row">
+          <div class="square square-0"></div>
+          <div class="square square-2"></div>
+          <div class="square square-3"></div>
+          <div class="square square-2"></div>
+          <div class="square square-1"></div>
+        </div>
+        <div class="row">
+          <div class="square square-1"></div>
+          <div class="square square-1"></div>
+          <div class="square square-2"></div>
+          <div class="square square-1"></div>
+          <div class="square square-2"></div>
+        </div>
+        <div class="row">
+          <div class="square square-2"></div>
+          <div class="square square-3"></div>
+          <div class="square square-3"></div>
+          <div class="square square-2"></div>
+          <div class="square square-2"></div>
+        </div>
+      </div>
+
+      <div class="button" ng-click="next()">Continue</div>
+    </div>
+
+
+    <div class="content" ng-show="stage == 'instructions-3'">
+      <h1>...and thats it!</h1>
+
+      <div class="board">
+        <div class="row">
+          <div class="square square-0"></div>
+          <div class="square square-0"></div>
+          <div class="square square-0"></div>
+          <div class="square square-0"></div>
+          <div class="square square-1"></div>
+        </div>
+        <div class="row">
+          <div class="square square-1"></div>
+          <div class="square square-0"></div>
+          <div class="square square-0"></div>
+          <div class="square square-0"></div>
+          <div class="square square-2"></div>
+        </div>
+        <div class="row">
+          <div class="square square-2"></div>
+          <div class="square square-0"></div>
+          <div class="square square-0"></div>
+          <div class="square square-0"></div>
+          <div class="square square-2"></div>
+        </div>
+      </div>
+
+      <div class="button" ng-click="next()">Start Game</div>
+    </div>
+
+
+    <div class="content" ng-show="stage == 'game'">
+      <div class="board full">
+        <div class="row" ng-repeat="(r, row) in squares track by $index">
+          <div ng-repeat="(c, owner) in row track by $index" class="square" ng-class="'square-' + owner" ng-click="play(r, c)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" ng-show="showWin">
+      <div class="content">
+        <h1 ng-class="'color-' + winningPlayer">Player {{winningPlayer}} Wins!</h1>
+        <div class="button" ng-click="reset()">New Game</div>
+      </div>
+    </div>
+
+    <div class="overlay" ng-show="showTye">
+      <div class="content">
+        <h1>Game Tied!</h1>
+        <div class="button" ng-click="reset()">New Game</div>
+      </div>
+    </div>
+
+  </body>
+</html>

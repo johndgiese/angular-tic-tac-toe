@@ -1,0 +1,22 @@
+{
+  "name": "tictactoe",
+  "version": "0.0.0",
+  "homepage": "https://github.com/johndgiese/config",
+  "authors": [
+    "J. David Giese <johndgiese@gmail.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "vendor",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "~1.2.23",
+    "normalize-css": "~3.0.1",
+    "underscore": "~1.7.0"
+  }
+}
